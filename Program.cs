@@ -84,6 +84,9 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
+// Configurar base de datos con más información
+await SetupDatabaseAsync(app);
+
 // Pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
@@ -94,25 +97,51 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configurar base de datos con más información
-await SetupDatabaseAsync(app);
+
 
 // Endpoints básicos
-app.MapGet("/", () =>
+app.MapGet("/health", async (AppDbContext db) =>
 {
-    return Results.Ok(new
+    try
     {
-        status = "healthy",
-        service = "Taxi API",
-        timestamp = DateTime.UtcNow,
-        version = "1.0"
-    });
-});
+        // 1. Verificar conexión a BD
+        var dbConnected = await db.Database.CanConnectAsync();
 
-app.MapGet("/healthz", () =>
-{
-    return Results.Ok("healthy");
+        // 2. Verificar que hay tablas
+        var tableCount = 0;
+        if (dbConnected)
+        {
+            using var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
+            tableCount = Convert.ToInt32(command.ExecuteScalar());
+        }
+
+        var status = dbConnected && tableCount >= 7 ? "healthy" : "unhealthy";
+        var statusCode = status == "healthy" ? 200 : 503;
+
+        return Results.Json(new
+        {
+            status = status,
+            database = dbConnected ? "connected" : "disconnected",
+            tables = tableCount,
+            timestamp = DateTime.UtcNow,
+            service = "Taxi API"
+        }, statusCode: statusCode);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            status = "unhealthy",
+            error = ex.Message,
+            timestamp = DateTime.UtcNow
+        }, statusCode: 503);
+    }
 });
+app.MapGet("/", () => Results.Json(new { status = "OK", time = DateTime.UtcNow }));
+app.MapGet("/healthz", () => Results.Json(new { status = "OK" }));
 
 app.MapGet("/db-status", async (HttpContext httpContext) => {
     try
@@ -161,6 +190,10 @@ app.MapGet("/db-status", async (HttpContext httpContext) => {
 });
 
 app.MapControllers();
+
+Console.WriteLine("Application is starting, waiting 5 seconds for health checks...");
+await Task.Delay(5000); // Espera 5 segundos para que todo esté listo
+
 
 app.Run();
 
