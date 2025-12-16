@@ -63,6 +63,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("DriverOnly", p => p.RequireRole("Driver"));
+    options.AddPolicy("PassengerOnly", p => p.RequireRole("Passenger"));
+});
+
 // Configurar conexión a PostgreSQL
 var connectionString = GetConnectionString();
 Console.WriteLine($"Connection String (masked): {GetMaskedConnectionString(connectionString)}");
