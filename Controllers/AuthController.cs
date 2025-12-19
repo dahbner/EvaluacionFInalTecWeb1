@@ -49,6 +49,17 @@ namespace ProyectoFinalTecWeb.Controllers
             return Ok(response);
         }
 
+        // POST: api/auth/forgotpassword
+        [HttpPost("forgotpassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var result = await _service.ForgotPasswordAsync(dto);
 
+            if (result == "Usuario no encontrado")
+            {
+                return NotFound(new { message = result });
+            }
+            return Ok(new { token = result });
+        }
     }
 }
