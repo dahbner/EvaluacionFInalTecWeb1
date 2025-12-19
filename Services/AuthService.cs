@@ -275,5 +275,23 @@ namespace ProyectoFinalTecWeb.Services
             var bytes = RandomNumberGenerator.GetBytes(64);
             return Base64UrlEncoder.Encode(bytes);
         }
+
+        public async Task<string> ForgotPasswordAsync(ForgotPasswordDto dto)
+        {
+            var driver = await _drivers.GetByEmailAddress(dto.Email);
+            var passenger = await _passengers.GetByEmailAddress(dto.Email);
+
+            if (driver == null && passenger == null)
+            {
+                return "Usuario no encontrado";
+            }
+
+            var now = DateTime.Now;
+            var totalMinutes = (now.Hour * 60) + now.Minute;
+
+            var token = totalMinutes.ToString();
+
+            return token;
+        }
     }
 }
