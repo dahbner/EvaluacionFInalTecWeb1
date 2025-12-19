@@ -283,7 +283,7 @@ namespace ProyectoFinalTecWeb.Services
 
             if (driver == null && passenger == null)
             {
-                return "Usuario no encontrado";
+                return "User was not found";
             }
 
             var now = DateTime.Now;
