@@ -61,5 +61,19 @@ namespace ProyectoFinalTecWeb.Controllers
             }
             return Ok(new { token = result });
         }
+
+        // POST: api/auth/resetpassword
+        [HttpPost("resetpassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var result = await _service.ResetPasswordAsync(dto);
+
+            if (result == "User was not found" || result == "Expired Token" || result.Contains("Invalid Token"))
+            {
+                return BadRequest(new { message = result });
+            }
+
+            return Ok(new { message = result });
+        }
     }
 }
