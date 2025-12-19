@@ -293,5 +293,45 @@ namespace ProyectoFinalTecWeb.Services
 
             return token;
         }
+
+        public async Task<string> ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            var driver = await _drivers.GetByEmailAddress(dto.Email);
+            var passenger = await _passengers.GetByEmailAddress(dto.Email);
+
+            if (driver == null && passenger == null)
+            {
+                return "User was not found";
+            }
+
+            if (!int.TryParse(dto.Token, out int tokenMinutes))
+            {
+                return "Invalid Token";
+            }
+
+            var now = DateTime.Now;
+            var currentMinutes = (now.Hour * 60) + now.Minute;
+
+            var difference = currentMinutes - tokenMinutes;
+
+            if (difference < 0 || difference > 15)
+            {
+                return "Expired Token";
+            }
+
+            var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+            if (driver != null)
+            {
+                driver.PasswordHash = newPasswordHash;
+                await _drivers.Update(driver);
+            }
+            else if (passenger != null)
+            {
+                passenger.PasswordHash = newPasswordHash;
+                await _passengers.Update(passenger);
+            }
+            return "Password Updated";
+        }
     }
 }
