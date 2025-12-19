@@ -55,7 +55,7 @@ namespace ProyectoFinalTecWeb.Controllers
         {
             var result = await _service.ForgotPasswordAsync(dto);
 
-            if (result == "Usuario no encontrado")
+            if (result == "User was not found")
             {
                 return NotFound(new { message = result });
             }
@@ -68,9 +68,14 @@ namespace ProyectoFinalTecWeb.Controllers
         {
             var result = await _service.ResetPasswordAsync(dto);
 
-            if (result == "User was not found" || result == "Expired Token" || result.Contains("Invalid Token"))
+            if (result == "Expired Token" || result.Contains("Invalid Token"))
             {
                 return BadRequest(new { message = result });
+            }
+
+            if (result == "User was not found")
+            {
+                return NotFound(new { message = result });
             }
 
             return Ok(new { message = result });
